@@ -66,14 +66,14 @@ canvas.stage { position: absolute; inset: 0; width: 100%; height: 100%; display:
 .cell.tone-cell { min-width: calc(14 * var(--u)); }
 .tone { height: max(4px, 0.6cqh); border-radius: 3px; background: linear-gradient(90deg, hsl(250 60% 18%), hsl(300 70% 40%), hsl(335 85% 62%), hsl(30 95% 72%), hsl(60 100% 82%)); position: relative; }
 .tone b { position: absolute; top: -0.5cqh; width: 2px; height: calc(100% + 1cqh); background: var(--ink); left: 0; transform: translateX(-1px); }
-.swatch { width: max(8px, calc(0.8 * var(--u))); height: max(8px, calc(0.8 * var(--u))); border-radius: 50%; border: 1px solid var(--line); background: #fff; display: inline-block; vertical-align: middle; }
+.swatch { width: max(22px, calc(2.6 * var(--u))); height: max(6px, calc(0.7 * var(--u))); border-radius: 50%; border: 1px solid var(--line); background: #fff; display: inline-block; vertical-align: middle; }
 .beat { width: max(6px, calc(0.6 * var(--u))); height: max(6px, calc(0.6 * var(--u))); border-radius: 50%; background: var(--line); transition: background 80ms; align-self: center; }
 .beat.on { background: var(--accent); }
 
 .portrait .screen { --u: 2.6cqw; }
 .portrait .hud { display: grid; grid-template-columns: repeat(3, 1fr); width: 86cqw; }
 .portrait .cell { min-width: 0; }
-.portrait .cell:nth-child(4) { grid-column: span 2; border-left: 0; }
+.portrait .cell:nth-child(4) { border-left: 0; }
 .portrait .cell:nth-child(n+4) { border-top: 1px solid var(--line); }
 
 .controls {
@@ -101,6 +101,12 @@ input[type=range]:disabled { opacity: 0.35; }
 input[type=url] { font: 13px var(--font-data); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; width: min(320px, 60vw); min-width: 0; }
 input[type=url]::placeholder { color: var(--ink-dim); }
 .recdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #e5484d; margin-right: 7px; vertical-align: 1px; }
+.auto::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; margin-right: 7px; vertical-align: 0; }
+.auto[aria-pressed="true"] { background: linear-gradient(90deg, #8f7cff, #e6a1c8, #f2b45a); border-color: transparent; color: #0b0c10; }
+.auto[aria-pressed="true"]::before { background: currentColor; }
+.palstrip { height: max(4px, 0.6cqh); border-radius: 3px; background: var(--line); }
+.mood-cell b.drop { color: var(--accent); }
+input[type=range].autoed { accent-color: #b9a7ff; }
 #btnRec[aria-pressed="true"] { background: #e5484d; border-color: #e5484d; color: #fff; }
 #btnRec[aria-pressed="true"] .recdot { background: #fff; animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: 0.2; } }
@@ -153,6 +159,7 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
         <div class="cell"><div class="k"><span>MID</span><b id="vMid">0.00</b></div><div class="bar"><i id="mMid"></i></div></div>
         <div class="cell"><div class="k"><span>HIGH</span><b id="vHigh">0.00</b></div><div class="bar"><i id="mHigh"></i></div></div>
         <div class="cell tone-cell"><div class="k"><span>TONE <span id="vTone">LOW</span></span><span class="swatch" id="swatch"></span></div><div class="tone"><b id="toneMark"></b></div></div>
+        <div class="cell mood-cell"><div class="k"><span>MOOD</span><b id="vMood">—</b></div><div class="palstrip" id="palStrip"></div></div>
         <div class="cell"><div class="k"><span>BEAT</span><b id="vBpm">— bpm</b></div><div class="beat" id="beatDot"></div></div>
       </div>
     </div>
@@ -173,6 +180,9 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
     <button id="btnRec" type="button" aria-pressed="false"><span class="recdot"></span><span id="recLabel">Rec clip</span></button>
     <label class="label chk" for="recHud"><input id="recHud" type="checkbox" checked> HUD in clip</label>
   </div>
+  <div class="group">
+    <button id="btnAuto" class="auto" type="button" aria-pressed="true" title="Let The Oracle read the song and set colour, gain and motion itself">Auto</button>
+  </div>
   <button id="btnMore" class="more" type="button" aria-expanded="false" aria-controls="adv">Settings ▾</button>
   <div class="adv" id="adv">
     <form class="group" id="urlForm">
@@ -184,6 +194,15 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
       <span class="label">Format</span>
       <button id="fmtL" type="button" aria-pressed="true">16:9</button>
       <button id="fmtP" type="button" aria-pressed="false">9:16</button>
+    </div>
+    <div class="group" role="group" aria-label="Colour palette" id="palGroup">
+      <span class="label">Palette</span>
+      <button type="button" data-pal="harmony" aria-pressed="true">Harmony</button>
+      <button type="button" data-pal="spectrum" aria-pressed="false">Spectrum</button>
+      <button type="button" data-pal="tone" aria-pressed="false">Tone</button>
+      <button type="button" data-pal="aurora" aria-pressed="false">Aurora</button>
+      <button type="button" data-pal="ember" aria-pressed="false">Ember</button>
+      <button type="button" data-pal="neon" aria-pressed="false">Neon</button>
     </div>
     <div class="group" role="group" aria-label="Visual mode">
       <span class="label">Visual</span>
@@ -204,7 +223,7 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
       <label class="slider" for="sens"><span>Gain</span><input id="sens" type="range" min="0.3" max="2.5" step="0.05" value="1"></label>
       <label class="slider" for="trail"><span>Trail</span><input id="trail" type="range" min="0" max="0.95" step="0.01" value="0.75" disabled></label>
     </div>
-    <span class="keys">1–4 visual · R rotate · H hide bar · F full-screen</span>
+    <span class="keys">A auto · 1–4 visual · P palette · R rotate · H hide bar · F full-screen</span>
   </div>
   <div class="msg" id="msg" role="status"></div>
 </div>
@@ -240,7 +259,7 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
   }
 
   // ---------- audio graph ----------
-  let ac = null, analyser = null, master = null, current = null;
+  let ac = null, analyser = null, analyserK = null, master = null, current = null, freqK = new Uint8Array(4096);
   let freq = new Uint8Array(1024), wave = new Uint8Array(2048);
   function ensureAudio() {
     if (ac) return;
@@ -252,6 +271,10 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
     analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.8;
     freq = new Uint8Array(analyser.frequencyBinCount);
     wave = new Uint8Array(analyser.fftSize);
+    // a second, finer analyser just for note detection (≈6 Hz per bin instead of ≈23 Hz)
+    analyserK = ac.createAnalyser(); analyserK.fftSize = 8192; analyserK.smoothingTimeConstant = 0.6;
+    freqK = new Uint8Array(analyserK.frequencyBinCount);
+    analyser.connect(analyserK);
     master = ac.createGain(); master.gain.value = 0.9;
     // Only demo/file/url go to the speakers. Tab and mic connect to the analyser alone,
     // otherwise their sound would play a second time, slightly delayed (heard as echo / stutter).
@@ -396,8 +419,10 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
   $('btnStop').onclick = stopCurrent;
 
   // ---------- analysis ----------
-  const A = { bass: 0, mid: 0, high: 0, level: 0, centroid: 0.3, tone: 0.5, beat: 0, bpm: 0, presence: 0 };
-  let bassAvg = 0, lastBeat = 0; const beatTimes = [];
+  const A = { bass: 0, mid: 0, high: 0, level: 0, centroid: 0.3, tone: 0.5, beat: 0, bpm: 0, presence: 0, keyHue: 250, keyPc: -1, tonal: 0 };
+  const NOTE = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+  const chroma = new Float32Array(12); let pcOfBin = null;
+  let prevBassB = 0, bassAvg = 0, lastBeat = 0; const beatTimes = [];
   const binHz = () => (ac ? ac.sampleRate : 44100) / 2 / freq.length;
   function band(lo, hi) { const b = binHz(); let s = 0, c = 0; for (let i = Math.max(1, Math.floor(lo / b)); i <= Math.min(freq.length - 1, Math.ceil(hi / b)); i++) { s += freq[i]; c++; } return c ? s / c / 255 : 0; }
 
@@ -411,9 +436,17 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
       for (let i = 0; i < freq.length; i++) freq[i] = 255 * Math.max(0, 0.32 * Math.exp(-i / 140) + 0.06 * Math.sin(t * 0.0012 + i * 0.03) + 0.05);
       for (let i = 0; i < wave.length; i++) wave[i] = 128 + 20 * Math.sin(i * 0.02 + t * 0.002) * Math.sin(t * 0.0007);
     }
-    const sens = +$('sens').value;
-    const k = x => Math.min(1, x * sens);
-    A.bass = k(band(20, 150)); A.mid = k(band(150, 2000)); A.high = k(band(2000, 12000) * 1.8);
+    const rb = band(20, 150), rm = band(150, 2000), rh = band(2000, 12000) * 1.8;
+    A.rb = rb; A.rm = rm; A.rh = rh; A.rLevel = (rb + rm + rh) / 3; // raw, before auto gain: used to judge the music itself
+    if (auto && live) {
+      // AUTO GAIN: each band is measured against its own recent peak, so quiet and loud songs both fill the range
+      const dec = Math.pow(0.9993, fr);
+      pk.b = Math.max(rb, pk.b * dec, 0.06); pk.m = Math.max(rm, pk.m * dec, 0.05); pk.h = Math.max(rh, pk.h * dec, 0.04);
+      A.bass = clamp(rb / (pk.b * 0.88)); A.mid = clamp(rm / (pk.m * 0.88)); A.high = clamp(rh / (pk.h * 0.88));
+    } else {
+      const sens = +$('sens').value, k = x => Math.min(1, x * sens);
+      A.bass = k(rb); A.mid = k(rm); A.high = k(rh);
+    }
     A.level = (A.bass + A.mid + A.high) / 3;
     let num = 0, den = 0; for (let i = 1; i < freq.length; i++) { num += i * freq[i]; den += freq[i]; }
     A.centroid += ((den ? num / den / freq.length : 0.2) - A.centroid) * 0.05;
@@ -429,16 +462,136 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
       const brightness = clamp((A.high * 1.2 + A.mid * 0.3 - A.bass * 1.2) / sum * 0.8 + 0.45);
       A.tone += ((fromCentroid * 0.4 + brightness * 0.6) - A.tone) * ease(0.035);
     }
+    // chroma: fold 65 Hz–2 kHz into the 12 pitch classes, then place them on the circle of fifths
+    // so related keys sit next to each other in hue (C → G → D … each a 30° step)
+    if (live) {
+      analyserK.getByteFrequencyData(freqK);
+      if (!pcOfBin || pcOfBin.length !== freqK.length) {
+        pcOfBin = new Int8Array(freqK.length).fill(-1); const bh = ac.sampleRate / 2 / freqK.length;
+        for (let i = 1; i < freqK.length; i++) { const hz = i * bh; if (hz >= 110 && hz <= 2000) pcOfBin[i] = ((Math.round(69 + 12 * Math.log2(hz / 440)) % 12) + 12) % 12; }
+      }
+      const cur = new Float32Array(12);
+      // only spectral peaks count, so the noise floor doesn't smear every note
+      for (let i = 2; i < freqK.length - 2; i++) {
+        const pc = pcOfBin[i]; if (pc < 0) continue;
+        const v = freqK[i];
+        if (v > 40 && v >= freqK[i - 1] && v >= freqK[i + 1] && v > (freqK[i - 2] + freqK[i + 2]) / 2 + 6) cur[pc] += v * v;
+      }
+      let tot = 0; for (let k = 0; k < 12; k++) tot += cur[k];
+      if (tot > 0) {
+        let x = 0, y = 0, sum = 0, best = 0;
+        for (let k = 0; k < 12; k++) {
+          chroma[k] += (cur[k] / tot - chroma[k]) * ease(0.06);
+          const ang = ((k * 7) % 12) * Math.PI / 6;
+          x += Math.cos(ang) * chroma[k]; y += Math.sin(ang) * chroma[k]; sum += chroma[k];
+          if (chroma[k] > chroma[best]) best = k;
+        }
+        A.keyPc = best; A.tonal = sum ? Math.hypot(x, y) / sum : 0;
+        const target = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+        const dh = ((target - A.keyHue + 540) % 360) - 180;
+        A.keyHue = (A.keyHue + dh * ease(0.03) + 360) % 360;
+      }
+    } else A.keyPc = -1;
     // presence: how much the sphere takes on colour (white when silent / idle)
     A.presence += ((live ? clamp(A.level * 6) : 0) - A.presence) * ease(0.05);
 
-    bassAvg = bassAvg * 0.95 + A.bass * 0.05;
-    A.beat *= 0.9;
-    if (live && A.bass > bassAvg * 1.25 && A.bass > 0.35 && t - lastBeat > 250) {
+    // beat = a sharp rise in bass above its running average (a held note doesn't count)
+    const bassRise = A.bass - prevBassB; prevBassB = A.bass;
+    bassAvg += (A.bass - bassAvg) * ease(0.05);
+    A.beat *= Math.pow(0.9, fr);
+    if (live && A.bass > bassAvg * 1.25 && A.bass > 0.35 && bassRise > 0.03 && t - lastBeat > 250) {
       A.beat = 1; lastBeat = t; beatTimes.push(t); if (beatTimes.length > 9) beatTimes.shift();
       if (beatTimes.length > 3) { const iv = []; for (let i = 1; i < beatTimes.length; i++) iv.push(beatTimes[i] - beatTimes[i - 1]); iv.sort((a, b) => a - b); let bpm = 60000 / iv[iv.length >> 1]; while (bpm > 165) bpm /= 2; A.bpm = Math.round(bpm); }
     }
     if (!live) { A.bpm = 0; beatTimes.length = 0; }
+    listen(t, fr, ease, live);
+  }
+
+  // ---------- AUTO: listen to the song, describe it, and steer the visuals ----------
+  let auto = true;
+  const pk = { b: 0.3, m: 0.3, h: 0.3 };
+  // slow descriptors of the last few seconds of music
+  const F = { energy: 0, bassShare: 0.33, midShare: 0.33, highShare: 0.33, bright: 0.5, tonal: 0.3, beatRate: 0, flux: 0, dyn: 0, eFast: 0, eSlow: 0 };
+  let prevSpec = null, lastBeatSeen = 0, lowSince = 0, armed = false;
+  A.drop = 0; A.mood = '—'; A.dropAt = -1e9;
+  const MOODS = {
+    calm:    { label: 'CALM',    palette: 'harmony' },
+    airy:    { label: 'AIRY',    palette: 'aurora' },
+    warm:    { label: 'WARM',    palette: 'ember' },
+    driving: { label: 'DRIVING', palette: 'neon' },
+    wild:    { label: 'WILD',    palette: 'spectrum' }
+  };
+  let moodNow = null, moodCand = null, candSince = 0, lastSwitch = -1e9;
+  const P = { bounce: 1, spike: 1, fold: 1, glow: 1, aura: 1 };
+
+  function listen(t, fr, ease, live) {
+    if (!live) { A.mood = '—'; moodNow = null; return; }
+    const slow = ease(0.006), mid = ease(0.03);
+    const sum = A.rb + A.rm + A.rh + 1e-4, lvl = clamp(A.rLevel * 2.2);
+    F.energy += (lvl - F.energy) * slow;
+    F.bassShare += (A.rb / sum - F.bassShare) * slow;
+    F.midShare += (A.rm / sum - F.midShare) * slow;
+    F.highShare += (A.rh / sum - F.highShare) * slow;
+    F.bright += (A.tone - F.bright) * slow;
+    F.tonal += (A.tonal - F.tonal) * slow;
+    F.dyn += (Math.abs(lvl - F.energy) - F.dyn) * slow;
+    // spectral flux: how much the spectrum changes frame to frame (busy / chaotic music changes a lot)
+    if (!prevSpec || prevSpec.length !== freq.length) prevSpec = new Uint8Array(freq.length);
+    let fl = 0; for (let i = 4; i < freq.length; i += 2) { const d = freq[i] - prevSpec[i]; if (d > 0) fl += d; }
+    prevSpec.set(freq);
+    F.flux += (fl / (freq.length / 2) / 255 - F.flux) * mid;
+    // beats per second (decays when the drums stop)
+    if (lastBeat !== lastBeatSeen) { lastBeatSeen = lastBeat; F.beatRate += (1 - 0) * 0.35; }
+    F.beatRate *= Math.pow(0.992, fr);
+
+    // DROP: a quiet stretch (breakdown / build-up) followed by a sudden surge of energy on a beat
+    F.eFast += (lvl - F.eFast) * ease(0.08); F.eSlow += (lvl - F.eSlow) * ease(0.004);
+    if (F.eFast < F.eSlow * 0.72) { if (!lowSince) lowSince = t; if (t - lowSince > 1800) armed = true; } else lowSince = 0;
+    if (armed && F.eFast > F.eSlow * 1.2 && A.beat > 0.99) { armed = false; A.drop = 1.6; A.dropAt = t; lastSwitch = -1e9; }
+    A.drop *= Math.pow(0.95, fr);
+
+    // MOOD: score each character, keep the leader only if it holds for a few seconds
+    const br = clamp(F.beatRate / 2.4);
+    const score = {
+      calm:    (1 - F.energy) * 1.3 + F.tonal * 0.9 - br * 0.6,
+      airy:    F.bright * 1.3 + F.highShare * 1.2 - F.bassShare * 0.8 + 0.1,
+      warm:    F.midShare * 1.8 + (1 - Math.abs(F.bright - 0.45) * 2) * 0.5 + br * 0.2,
+      driving: F.bassShare * 1.6 + br * 1.0 + F.energy * 0.5 - 0.2,
+      wild:    clamp(F.flux * 9) * 1.2 + clamp(F.dyn * 6) * 0.6 + F.highShare * 0.4 - 0.15
+    };
+    let best = 'calm'; for (const k in score) if (score[k] > score[best]) best = k;
+    if (best !== moodCand) { moodCand = best; candSince = t; }
+    const settle = moodNow ? 5000 : 1500;
+    if (moodCand !== moodNow && t - candSince > settle && t - lastSwitch > 9000) {
+      moodNow = moodCand; lastSwitch = t;
+      if (auto) setPalette(MOODS[moodNow].palette, true);
+    }
+    A.mood = moodNow ? MOODS[moodNow].label : '…';
+
+    if (!auto) return;
+    // PARAMETERS: drums → bounce, hi-hats → spikes, mids → folds, loudness → glow and aura
+    const ps = ease(0.02);
+    P.bounce += ((0.45 + br * 0.9 + F.bassShare * 0.9) - P.bounce) * ps;
+    P.spike  += ((0.35 + clamp(F.highShare * 2.6) * 0.85 + clamp(F.flux * 6) * 0.2) - P.spike) * ps;
+    P.fold   += ((0.4 + clamp(F.midShare * 2.4) * 1.1) - P.fold) * ps;
+    P.glow   += ((0.55 + F.energy * 0.8 + A.drop * 0.5) - P.glow) * ps * 3;
+    P.aura   += ((0.5 + F.energy * 0.8 + br * 0.4) - P.aura) * ps;
+  }
+
+  // write the automated values into the sliders so the viewer can see what Auto is doing
+  function showAutoParams() {
+    $('kBounce').value = P.bounce.toFixed(2); $('kSpike').value = P.spike.toFixed(2); $('kFold').value = P.fold.toFixed(2);
+    $('kGlow').value = P.glow.toFixed(2); $('kAura').value = P.aura.toFixed(2);
+  }
+  const AUTO_SLIDERS = ['kBounce', 'kSpike', 'kFold', 'kGlow', 'kAura', 'sens'];
+  function setAuto(on, quiet) {
+    auto = on;
+    $('btnAuto').setAttribute('aria-pressed', String(on));
+    AUTO_SLIDERS.forEach(id => $(id).classList.toggle('autoed', on));
+    $('sens').disabled = on;
+    if (on) { if (moodNow) setPalette(MOODS[moodNow].palette, true); }
+    if (!quiet) msg(on ? 'Auto on: The Oracle reads the song and sets colour, gain and motion.' : 'Auto off: you are in manual control.');
+    try { localStorage.setItem('oracle-auto', on ? '1' : '0'); } catch {}
   }
 
   // tone → colour. Low: deep indigo, dark. High: light, vivid (pink → peach → lemon).
@@ -474,7 +627,7 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
         uTime: { value: 0 }, uBass: { value: 0 }, uMid: { value: 0 }, uHigh: { value: 0 },
         uSpike: { value: new Array(SPIKES).fill(0) }, uDir: { value: dirs },
         uC1: { value: new THREE.Color(1, 1, 1) }, uC2: { value: new THREE.Color(1, 1, 1) },
-        uC3: { value: new THREE.Color(1, 1, 1) }, uC4: { value: new THREE.Color(1, 1, 1) },
+        uC3: { value: new THREE.Color(1, 1, 1) }, uC4: { value: new THREE.Color(1, 1, 1) }, uC5: { value: new THREE.Color(1, 1, 1) },
         uRim: { value: new THREE.Color(1, 1, 1) }, uIri: { value: 1 }
       };
       const NOISE = `
@@ -545,16 +698,18 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
         }`;
       const fragmentShader = `
         uniform float uTime, uIri;
-        uniform vec3 uC1, uC2, uC3, uC4, uRim;
+        uniform vec3 uC1, uC2, uC3, uC4, uC5, uRim;
         varying vec3 vN; varying vec3 vV; varying vec3 vObj; varying float vD; varying float vS;
         ${NOISE}
         void main(){
-          // multi-colour gradient: a slow-moving flow field mixes 3 tone colours across the body, spike tips take the 4th
+          // multi-colour gradient: three slow flow fields mix 4 palette colours across the body, spike tips take the 5th
           float g1 = 0.5 + 0.5 * snoise(vObj*1.2 + vec3(0.0, uTime*0.18, uTime*0.07));
           float g2 = 0.5 + 0.5 * snoise(vObj*2.1 - vec3(uTime*0.11, 0.0, 0.0));
           float band = vObj.y * 0.5 + 0.5;
           vec3 base = mix(uC1, uC2, smoothstep(0.1, 0.9, band*0.55 + g1*0.45));
           base = mix(base, uC3, smoothstep(0.5, 0.9, g2) * 0.85);
+          float g3 = 0.5 + 0.5 * snoise(vObj*1.7 + vec3(uTime*0.09, -uTime*0.13, 0.0) + 7.3);
+          base = mix(base, uC5, smoothstep(0.55, 0.92, g3) * 0.8);
           base = mix(base, uC4, smoothstep(0.02, 0.35, vS));
           base *= 0.82 + 0.36 * smoothstep(-0.15, 0.2, vD);
           vec3 N = normalize(vN); vec3 V = normalize(-vV);
@@ -659,21 +814,45 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
   if (!gl) msg('The Oracle needs WebGL, which this browser doesn’t provide. Showing the 2D visuals instead.');
 
   const sm = { bass: 0, mid: 0, high: 0 };
-  const pal = [[1,1,1],[1,1,1],[1,1,1],[1,1,1]];
+  const pal = [[1,1,1],[1,1,1],[1,1,1],[1,1,1],[1,1,1]];
   const spring = { s: 1, v: 0, prevBass: 0 };
   let burst = 0;
   let sphereTime = 0;
-  function oraclePalette() {
+  let palette = 'harmony';
+  const wrapH = h => ((h % 360) + 360) % 360;
+  function oraclePalette(tSec) {
     const c = toneHSL(A.tone), p = A.presence;
-    const sp = 20 + A.tone * 45; // low tones keep a tight, deep hue family; high tones fan out
-    const set = [
-      [c.h, c.s, c.l * 0.75],                                  // deep body
-      [c.h + sp, c.s, Math.min(0.9, c.l + 0.04)],              // neighbour hue
-      [c.h - sp * 1.3, c.s * 0.95, Math.min(0.92, c.l + 0.1)], // counter hue
-      [c.h + 130, 1, Math.min(0.94, c.l + 0.32)]               // spike tips: bright accent
-    ];
-    return set.map(([h, s, l]) => hslToRgb(((h % 360) + 360) % 360, Math.min(1, s), l).map(v => 1 + (v - 1) * p));
+    const tt = A.tone * A.tone * (3 - 2 * A.tone);
+    // body lightness stops short of white so bright songs stay vivid instead of pastel
+    const L = 0.1 + tt * 0.52, S = 0.78 + tt * 0.22;
+    const lo = k => Math.min(0.82, L + k);
+    const K = A.keyHue, sp = 25 + A.tone * 45;
+    let set;
+    switch (palette) {
+      case 'spectrum': { // the whole wheel at once, slowly turning with the key
+        const h0 = K + tSec * 6;
+        set = [[h0, S, L * 0.8], [h0 + 72, S, lo(0.04)], [h0 + 144, S, lo(0.08)], [h0 + 288, 1, lo(0.3)], [h0 + 216, S, lo(0.02)]];
+        break; }
+      case 'tone': // the original: hue rides the tone, indigo → magenta → peach → lemon
+        set = [[c.h, S, L * 0.75], [c.h + sp, S, lo(0.04)], [c.h - sp * 1.3, S * 0.95, lo(0.1)], [c.h + 130, 1, lo(0.32)], [c.h + sp * 2.2, S, lo(0.02)]];
+        break;
+      case 'aurora': { const d = Math.sin(tSec * 0.2) * 20;
+        set = [[165 + d, 0.8, L * 0.8], [195 + d, 0.85, lo(0.05)], [275 + d, 0.7, lo(0.06)], [110 + d, 1, lo(0.32)], [320 + d, 0.7, lo(0.02)]];
+        break; }
+      case 'ember': { const d = Math.sin(tSec * 0.25) * 8;
+        set = [[352 + d, 0.85, L * 0.75], [15 + d, 0.95, lo(0.05)], [35 + d, 1, lo(0.1)], [52 + d, 1, lo(0.34)], [330 + d, 0.8, lo(0.0)]];
+        break; }
+      case 'neon': {
+        set = [[K + 280, 1, L * 0.8], [K + 190, 1, lo(0.06)], [K + 320, 1, lo(0.08)], [K + 160, 1, lo(0.34)], [K + 240, 1, lo(0.04)]];
+        break; }
+      default: { // harmony: hue comes from the notes being played, analogous body + complementary tips
+        const w = 30 + A.tonal * 20;
+        set = [[K, S, L * 0.75], [K + w, S, lo(0.04)], [K - w * 1.4, S * 0.95, lo(0.1)], [K + 180, 1, lo(0.32)], [K + 95, S, lo(0.02)]];
+      }
+    }
+    return set.map(([h, s2, l]) => hslToRgb(wrapH(h), Math.min(1, s2), Math.min(0.95, l)).map(v => 1 + (v - 1) * p));
   }
+
   function drawSphere(dt) {
     const f = reduced ? 0.4 : 1, live = current ? 1 : 0;
     const bounce = +$('kBounce').value, spikeK = +$('kSpike').value, foldK = +$('kFold').value, sens = +$('sens').value;
@@ -688,9 +867,9 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
     // BASS: spring bounce. Kick transients punch the scale outward, the spring pulls it back (thump, thump).
     const onset = Math.max(0, A.bass - spring.prevBass); spring.prevBass = A.bass;
     const target = 1 + (live ? A.bass * 0.10 * bounce : 0);
-    spring.v += (target - spring.s) * 0.28 + live * f * bounce * (onset * 0.9 + (A.beat > 0.99 ? 0.07 : 0));
-    spring.v *= 0.68; spring.s += spring.v;
-    burst = Math.max(burst * Math.pow(0.9, dt / 16.7), live * f * Math.min(1, onset * 3 + (A.beat > 0.99 ? 0.8 : 0)) * bounce);
+    spring.v += (target - spring.s) * 0.28 + live * f * bounce * (Math.min(onset, 0.25) * 0.9 + (A.beat > 0.99 ? 0.07 : 0));
+    spring.v *= 0.68; spring.s = clamp(spring.s + spring.v, 0.85, 1.45); // keep every hit inside the frame
+    burst = Math.max(burst * Math.pow(0.9, dt / 16.7), live * f * Math.min(1, onset * 3 + (A.beat > 0.99 ? 0.8 : 0)) * bounce, live * f * A.drop);
     const k = spring.s - 1;
     gl.mesh.scale.set(1 + k * 1.1, 1 + k * 0.8, 1 + k * 1.1); // a little squash on each hit
 
@@ -707,9 +886,9 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
     }
 
     // COLOUR: four tone-derived colours, eased
-    const tgt = oraclePalette();
-    for (let c = 0; c < 4; c++) for (let i = 0; i < 3; i++) pal[c][i] += (tgt[c][i] - pal[c][i]) * 0.08;
-    u.uC1.value.setRGB(...pal[0]); u.uC2.value.setRGB(...pal[1]); u.uC3.value.setRGB(...pal[2]); u.uC4.value.setRGB(...pal[3]);
+    const tgt = oraclePalette(performance.now() / 1000);
+    for (let c = 0; c < 5; c++) for (let i = 0; i < 3; i++) pal[c][i] += (tgt[c][i] - pal[c][i]) * 0.08;
+    u.uC1.value.setRGB(...pal[0]); u.uC2.value.setRGB(...pal[1]); u.uC3.value.setRGB(...pal[2]); u.uC4.value.setRGB(...pal[3]); u.uC5.value.setRGB(...pal[4]);
     u.uRim.value.setRGB(...pal[1].map(v => 0.08 + v * 0.85));
 
     gl.mesh.rotation.y += dt * 0.00012 * (1 + A.level * 2) * f;
@@ -813,12 +992,26 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
   let savedFmt = null; try { savedFmt = localStorage.getItem('oracle-format'); } catch {}
   if (savedFmt === 'p' || (!savedFmt && PHONE && innerHeight > innerWidth)) setFormat(true);
 
+  function setPalette(name, fromAuto) {
+    palette = name;
+    document.querySelectorAll('[data-pal]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pal === name)));
+    if (!fromAuto) try { localStorage.setItem('oracle-palette', name); } catch {}
+  }
+  document.querySelectorAll('[data-pal]').forEach(b => b.onclick = () => { if (auto) setAuto(false); setPalette(b.dataset.pal); });
+  // touching any automated slider hands control back to the viewer
+  AUTO_SLIDERS.forEach(id => $(id).addEventListener('input', () => { if (auto) setAuto(false); }));
+  $('btnAuto').onclick = () => setAuto(!auto);
+  { let a = '1'; try { a = localStorage.getItem('oracle-auto') ?? '1'; } catch {} setAuto(a !== '0', true); }
+  try { const sp = localStorage.getItem('oracle-palette'); if (sp && document.querySelector(`[data-pal="${sp}"]`)) setPalette(sp); } catch {}
+
   // Settings sheet (phones) and tap-the-screen to hide / show the controls
   $('btnMore').onclick = () => { const open = !$('adv').classList.contains('open'); $('adv').classList.toggle('open', open); $('btnMore').setAttribute('aria-expanded', String(open)); $('btnMore').textContent = open ? 'Settings ▴' : 'Settings ▾'; };
   $('screen').addEventListener('click', () => { if (PHONE && !document.querySelector('[data-tap-armed]')) $('controls').classList.toggle('hidden'); });
   addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
     if (e.key >= '1' && e.key <= '4') setMode(+e.key - 1);
+    else if (e.key === 'a' || e.key === 'A') setAuto(!auto);
+    else if (e.key === 'p' || e.key === 'P') { if (auto) setAuto(false); const list = [...document.querySelectorAll('[data-pal]')].map(b => b.dataset.pal); setPalette(list[(list.indexOf(palette) + 1) % list.length]); }
     else if (e.key === 'r' || e.key === 'R') setFormat(!$('output').classList.contains('portrait'));
     else if (e.key === 'h' || e.key === 'H') $('controls').classList.toggle('hidden');
     else if (e.key === 'f' || e.key === 'F') { const d = document; const p = d.fullscreenElement ? d.exitFullscreen() : $('wrap').requestFullscreen?.(); p?.catch?.(() => {}); }
@@ -909,11 +1102,11 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
     rx.fillText($('srcLabel').textContent.toUpperCase(), 2.4 * u, h * 0.032 + 3.1 * u);
     // HUD cells
     const cells = [
-      ['BASS', A.bass, '#8f7cff'], ['MID', A.mid, '#e6a1c8'], ['HIGH', A.high, '#f7f0b0'], ['TONE ' + $('vTone').textContent, A.tone, 'tone'], ['BEAT', A.beat, 'beat']
+      ['BASS', A.bass, '#8f7cff'], ['MID', A.mid, '#e6a1c8'], ['HIGH', A.high, '#f7f0b0'], ['TONE ' + $('vTone').textContent, A.tone, 'tone'], ['BEAT', A.beat, 'beat'], ['MOOD', 0, 'mood']
     ];
     const ch = 4.2 * u, pad = 1.4 * u;
-    let rows = portrait ? [[0, 1, 2], [3, 4]] : [[0, 1, 2, 3, 4]];
-    const widths = i => (i === 3 ? (portrait ? 2 : 1.55) : 1) * (portrait ? 0.86 * w / 3 : 9.4 * u);
+    let rows = portrait ? [[0, 1, 2], [3, 5, 4]] : [[0, 1, 2, 3, 5, 4]];
+    const widths = i => (i === 3 && !portrait ? 1.55 : 1) * (portrait ? 0.86 * w / 3 : 9.4 * u);
     const totalW = Math.max(...rows.map(r => r.reduce((a, i) => a + widths(i), 0)));
     const x0 = (w - totalW) / 2, y0 = h - h * 0.04 - ch * rows.length;
     rx.fillStyle = 'rgba(11,12,16,0.6)'; rr(x0, y0, totalW, ch * rows.length, 0.6 * u); rx.fill();
@@ -931,6 +1124,11 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
           ['hsl(250,60%,18%)', 'hsl(300,70%,40%)', 'hsl(335,85%,62%)', 'hsl(30,95%,72%)', 'hsl(60,100%,82%)'].forEach((c, j) => g.addColorStop(j / 4, c));
           rx.fillStyle = g; rx.fillRect(x + pad, by, bw, bh);
           rx.fillStyle = '#ece7dc'; rx.fillRect(x + pad + bw * v - 1, by - 0.35 * u, 2, bh + 0.7 * u);
+        } else if (color === 'mood') {
+          const g = rx.createLinearGradient(x + pad, 0, x + pad + bw, 0);
+          [pal[0], pal[4], pal[1], pal[2], pal[3]].forEach((c, j) => g.addColorStop(j / 4, `rgb(${c.map(v => Math.round(clamp(v) * 255)).join(',')})`));
+          rx.fillStyle = g; rx.fillRect(x + pad, by, bw, bh);
+          rx.fillStyle = $('vMood').classList.contains('drop') ? '#f2b45a' : '#ece7dc'; rx.textAlign = 'right'; rx.fillText($('vMood').textContent, x + cw - pad, y + 2.05 * u); rx.textAlign = 'left';
         } else if (color === 'beat') {
           rx.fillStyle = v > 0.5 ? '#f2b45a' : 'rgba(220,214,200,0.14)';
           rx.beginPath(); rx.arc(x + pad + 0.3 * u, by + bh / 2, 0.3 * u, 0, 6.2832); rx.fill();
@@ -961,11 +1159,17 @@ button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transpa
     if ((frame++ & 3) === 0) {
       [['Bass', A.bass], ['Mid', A.mid], ['High', A.high]].forEach(([k, v]) => { $('m' + k).style.width = (v * 100).toFixed(0) + '%'; $('v' + k).textContent = v.toFixed(2); });
       $('toneMark').style.left = (A.tone * 100).toFixed(1) + '%';
-      $('vTone').textContent = A.tone < 0.33 ? 'LOW' : A.tone < 0.66 ? 'MID' : 'HIGH';
+      $('vTone').textContent = (A.tone < 0.33 ? 'LOW' : A.tone < 0.66 ? 'MID' : 'HIGH') + (A.keyPc >= 0 && current ? ' · ' + NOTE[A.keyPc] : '');
       const c = sphereRGB().map(v => Math.round(clamp(v) * 255));
-      $('swatch').style.background = `rgb(${c[0]},${c[1]},${c[2]})`;
+      const stops = [pal[0], pal[4], pal[1], pal[2], pal[3]].map(v => `rgb(${v.map(x => Math.round(clamp(x) * 255)).join(',')})`);
+      $('swatch').style.background = `linear-gradient(90deg, ${stops.join(', ')})`;
       $('beatDot').classList.toggle('on', A.beat > 0.5);
       $('vBpm').textContent = A.bpm ? A.bpm + ' bpm' : '— bpm';
+      const dropping = current && performance.now() - A.dropAt < 1500;
+      $('vMood').textContent = dropping ? 'DROP' : (current ? A.mood : '—');
+      $('vMood').classList.toggle('drop', dropping);
+      $('palStrip').style.background = $('swatch').style.background;
+      if (auto && current) showAutoParams();
     }
     requestAnimationFrame(loop);
   }
