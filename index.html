@@ -7,6 +7,11 @@
 <meta property="og:title" content="The Oracle">
 <meta property="og:description" content="Real-time audio-reactive visuals. Play a song, share a tab or use a mic.">
 <meta name="theme-color" content="#0b0c10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="The Oracle">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='35%25' cy='30%25'%3E%3Cstop offset='0' stop-color='%23fff6c8'/%3E%3Cstop offset='.5' stop-color='%23e46aa8'/%3E%3Cstop offset='1' stop-color='%233a2a8c'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='12' fill='%230b0c10'/%3E%3Ccircle cx='32' cy='32' r='20' fill='url(%23g)'/%3E%3C/svg%3E">
 <title>The Oracle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,7 +33,7 @@
 html, body { height: 100%; overflow: hidden; }
 body { background: var(--void); color: var(--ink); font-family: var(--font-ui); display: flex; flex-direction: column; }
 
-.wrap { flex: 1; min-height: 0; padding: 16px 16px 12px; display: grid; place-items: center; container-type: size; }
+.wrap { flex: 1; min-height: 0; padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px; display: grid; place-items: center; container-type: size; }
 .output { --aw: 16; --ah: 9; width: min(100cqw, (100cqh - 22px) * var(--aw) / var(--ah)); display: grid; gap: 6px; }
 .output.portrait { --aw: 9; --ah: 16; }
 .wrap:fullscreen { padding: 0; background: var(--void); }
@@ -95,10 +100,41 @@ input[type=range] { width: 90px; accent-color: var(--accent); }
 input[type=range]:disabled { opacity: 0.35; }
 input[type=url] { font: 13px var(--font-data); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; width: min(320px, 60vw); min-width: 0; }
 input[type=url]::placeholder { color: var(--ink-dim); }
+.recdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #e5484d; margin-right: 7px; vertical-align: 1px; }
+#btnRec[aria-pressed="true"] { background: #e5484d; border-color: #e5484d; color: #fff; }
+#btnRec[aria-pressed="true"] .recdot { background: #fff; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0.2; } }
+.chk { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.chk input { accent-color: var(--accent); margin: 0; }
 .msg { font-size: 12px; color: var(--accent); min-height: 1em; flex-basis: 100%; }
 .msg:empty { display: none; }
 .keys { font-family: var(--font-data); font-size: 11px; color: var(--ink-dim); margin-left: auto; }
-@media (max-width: 640px) { .keys { display: none; } }
+.adv { display: contents; }
+.more { display: none; }
+.slider { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+button, .file { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+/* phones: big stage, essentials in one compact strip, everything else in a scrollable Settings sheet */
+@media (max-width: 700px), (pointer: coarse) and (max-height: 500px) {
+  .wrap { padding: calc(8px + env(safe-area-inset-top, 0px)) 8px 8px; }
+  .caption { display: none; }
+  .output { width: min(100cqw, 100cqh * var(--aw) / var(--ah)); }
+  .controls { gap: 8px 10px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .controls > .group > span.label { display: none; }
+  button, .file { padding: 9px 12px; font-size: 14px; }
+  .more { display: inline-block; margin-left: auto; }
+  .adv { display: none; }
+  .controls { position: relative; }
+  /* the Settings sheet slides up over the stage instead of shrinking it */
+  .adv.open { display: flex; flex-direction: column; gap: 12px; position: absolute; left: 0; right: 0; bottom: 100%; max-height: 60vh; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 12px; background: rgba(14, 15, 21, 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); border-radius: 12px 12px 0 0; }
+  .adv .group { gap: 8px; }
+  .sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+  .sliders > .label { grid-column: 1 / -1; }
+  .slider { justify-content: space-between; }
+  .slider input[type=range] { width: 100%; max-width: 160px; }
+  input[type=url] { width: 100%; font-size: 16px; }
+  #urlForm { flex-wrap: nowrap; }
+  .keys { display: none; }
+}
 </style>
 </head>
 <body style="margin:0">
@@ -126,54 +162,69 @@ input[type=url]::placeholder { color: var(--ink-dim); }
 <div class="controls" id="controls">
   <div class="group">
     <span class="label">Source</span>
-    <button id="btnDemo" type="button">▶ Demo track</button>
+    <button id="btnDemo" type="button">▶ Demo</button>
     <label class="file" for="fileIn">Open audio file<input id="fileIn" type="file" accept="audio/*"></label>
     <button id="btnTab" type="button">Tab audio</button>
     <button id="btnMic" type="button">Mic / line in</button>
     <button id="btnStop" type="button">Stop</button>
   </div>
-  <form class="group" id="urlForm">
-    <label class="label" for="urlIn">Link</label>
-    <input id="urlIn" type="url" placeholder="https://…/track.mp3" autocomplete="off">
-    <button type="submit">Play</button>
-  </form>
-  <div class="group" role="group" aria-label="Output format">
-    <span class="label">Format</span>
-    <button id="fmtL" type="button" aria-pressed="true">16:9</button>
-    <button id="fmtP" type="button" aria-pressed="false">9:16</button>
+  <div class="group" role="group" aria-label="Record">
+    <span class="label">Record</span>
+    <button id="btnRec" type="button" aria-pressed="false"><span class="recdot"></span><span id="recLabel">Rec clip</span></button>
+    <label class="label chk" for="recHud"><input id="recHud" type="checkbox" checked> HUD in clip</label>
   </div>
-  <div class="group" role="group" aria-label="Visual mode">
-    <span class="label">Visual</span>
-    <button id="mode0" type="button" aria-pressed="true">Oracle</button>
-    <button id="mode1" type="button" aria-pressed="false">Dots</button>
-    <button id="mode2" type="button" aria-pressed="false">Waves</button>
-    <button id="mode3" type="button" aria-pressed="false">Color</button>
+  <button id="btnMore" class="more" type="button" aria-expanded="false" aria-controls="adv">Settings ▾</button>
+  <div class="adv" id="adv">
+    <form class="group" id="urlForm">
+      <label class="label" for="urlIn">Link</label>
+      <input id="urlIn" type="url" placeholder="https://…/track.mp3" autocomplete="off">
+      <button type="submit">Play</button>
+    </form>
+    <div class="group" role="group" aria-label="Output format">
+      <span class="label">Format</span>
+      <button id="fmtL" type="button" aria-pressed="true">16:9</button>
+      <button id="fmtP" type="button" aria-pressed="false">9:16</button>
+    </div>
+    <div class="group" role="group" aria-label="Visual mode">
+      <span class="label">Visual</span>
+      <button id="mode0" type="button" aria-pressed="true">Oracle</button>
+      <button id="mode1" type="button" aria-pressed="false">Dots</button>
+      <button id="mode2" type="button" aria-pressed="false">Waves</button>
+      <button id="mode3" type="button" aria-pressed="false">Color</button>
+    </div>
+    <div class="group sliders" id="oracleCtl">
+      <span class="label">Oracle</span>
+      <label class="slider" for="kBounce"><span>Bounce</span><input id="kBounce" type="range" min="0" max="2" step="0.05" value="1"></label>
+      <label class="slider" for="kSpike"><span>Spike</span><input id="kSpike" type="range" min="0" max="2" step="0.05" value="1"></label>
+      <label class="slider" for="kFold"><span>Fold</span><input id="kFold" type="range" min="0" max="2" step="0.05" value="1"></label>
+      <label class="slider" for="kGlow"><span>Glow</span><input id="kGlow" type="range" min="0" max="2" step="0.05" value="1"></label>
+      <label class="slider" for="kAura"><span>Aura</span><input id="kAura" type="range" min="0" max="2" step="0.05" value="1"></label>
+    </div>
+    <div class="group sliders">
+      <label class="slider" for="sens"><span>Gain</span><input id="sens" type="range" min="0.3" max="2.5" step="0.05" value="1"></label>
+      <label class="slider" for="trail"><span>Trail</span><input id="trail" type="range" min="0" max="0.95" step="0.01" value="0.75" disabled></label>
+    </div>
+    <span class="keys">1–4 visual · R rotate · H hide bar · F full-screen</span>
   </div>
-  <div class="group" id="oracleCtl">
-    <span class="label">Oracle</span>
-    <label class="label" for="kBounce">Bounce</label>
-    <input id="kBounce" type="range" min="0" max="2" step="0.05" value="1">
-    <label class="label" for="kSpike">Spike</label>
-    <input id="kSpike" type="range" min="0" max="2" step="0.05" value="1">
-    <label class="label" for="kFold">Fold</label>
-    <input id="kFold" type="range" min="0" max="2" step="0.05" value="1">
-  </div>
-  <div class="group">
-    <label class="label" for="sens">Gain</label>
-    <input id="sens" type="range" min="0.3" max="2.5" step="0.05" value="1">
-    <label class="label" for="trail">Trail</label>
-    <input id="trail" type="range" min="0" max="0.95" step="0.01" value="0.75" disabled>
-  </div>
-  <span class="keys">1–4 visual · R rotate 16:9 / 9:16 · H hide bar · F full-screen output</span>
   <div class="msg" id="msg" role="status"></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
   const msg = t => { $('msg').textContent = t || ''; };
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const PHONE = matchMedia('(max-width: 700px), (pointer: coarse) and (max-height: 500px)').matches;
+  const LITE = matchMedia('(pointer: coarse)').matches; // phones & tablets: lighter geometry and particles
+  const canTab = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+  if (!canTab) document.getElementById('btnTab').hidden = true; // iPhone/iPad and Android can't share tab audio
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 
   // ---------- 2D canvas ----------
@@ -194,6 +245,8 @@ input[type=url]::placeholder { color: var(--ink-dim); }
   function ensureAudio() {
     if (ac) return;
     const AC = window.AudioContext || window.webkitAudioContext;
+    // iPhone: play through the ringer/silent switch like a music app
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {}
     try { ac = new AC({ latencyHint: 'playback' }); } catch { ac = new AC(); } // larger buffer = fewer dropouts
     analyser = ac.createAnalyser();
     analyser.fftSize = 2048; analyser.smoothingTimeConstant = 0.8;
@@ -243,12 +296,20 @@ input[type=url]::placeholder { color: var(--ink-dim); }
     msg('');
   }
 
+  // iOS sometimes refuses play() outside a direct tap: wait for the next tap anywhere
+  function armTapToPlay(el, fallback) {
+    msg('Tap the screen to start playback.');
+    const go = () => { ac.resume(); el.play().then(() => msg('')).catch(() => msg(fallback || 'Playback was blocked by the browser.')); };
+    document.addEventListener('pointerdown', go, { once: true, capture: true });
+  }
+
   // ---------- local file ----------
   function startFile(file) {
     ensureAudio(); ac.resume(); stopCurrent();
     const el = new Audio(); el.src = URL.createObjectURL(file); el.loop = true;
     const src = ac.createMediaElementSource(el); src.connect(master);
-    el.play().catch(() => msg('This file could not be played. Try an .mp3, .wav, .m4a or .ogg file.'));
+    el.playsInline = true;
+    el.play().catch(() => armTapToPlay(el, 'This file could not be played. Try an .mp3, .wav, .m4a or .ogg file.'));
     current = { stop() { el.pause(); src.disconnect(); URL.revokeObjectURL(el.src); } };
     $('srcLabel').textContent = 'file · ' + file.name;
     msg('');
@@ -263,7 +324,8 @@ input[type=url]::placeholder { color: var(--ink-dim); }
     const el = new Audio(); el.crossOrigin = 'anonymous'; el.loop = true; el.src = u.href;
     const src = ac.createMediaElementSource(el); src.connect(master);
     el.onerror = () => { stopCurrent(); msg('Could not load that link. It must point straight to an audio file (.mp3, .wav, .ogg) on a server that allows cross-origin access. Otherwise download the file and use “Open audio file”.'); };
-    el.play().catch(() => {});
+    el.playsInline = true;
+    el.play().catch(() => armTapToPlay(el));
     current = { stop() { el.onerror = null; el.pause(); el.removeAttribute('src'); src.disconnect(); } };
     $('srcLabel').textContent = 'url · ' + decodeURIComponent(u.pathname.split('/').pop() || u.hostname);
     msg('');
@@ -399,7 +461,7 @@ input[type=url]::placeholder { color: var(--ink-dim); }
     if (!window.THREE) return null;
     try {
       const renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: true });
-      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, LITE ? 1.25 : 1.5));
       renderer.setClearColor(0x0b0c10, 1);
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
@@ -413,7 +475,7 @@ input[type=url]::placeholder { color: var(--ink-dim); }
         uSpike: { value: new Array(SPIKES).fill(0) }, uDir: { value: dirs },
         uC1: { value: new THREE.Color(1, 1, 1) }, uC2: { value: new THREE.Color(1, 1, 1) },
         uC3: { value: new THREE.Color(1, 1, 1) }, uC4: { value: new THREE.Color(1, 1, 1) },
-        uRim: { value: new THREE.Color(1, 1, 1) }
+        uRim: { value: new THREE.Color(1, 1, 1) }, uIri: { value: 1 }
       };
       const NOISE = `
         vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
@@ -482,7 +544,7 @@ input[type=url]::placeholder { color: var(--ink-dim); }
           gl_Position = projectionMatrix * mv;
         }`;
       const fragmentShader = `
-        uniform float uTime;
+        uniform float uTime, uIri;
         uniform vec3 uC1, uC2, uC3, uC4, uRim;
         varying vec3 vN; varying vec3 vV; varying vec3 vObj; varying float vD; varying float vS;
         ${NOISE}
@@ -498,20 +560,99 @@ input[type=url]::placeholder { color: var(--ink-dim); }
           vec3 N = normalize(vN); vec3 V = normalize(-vV);
           vec3 L1 = normalize(vec3(0.6, 0.8, 0.7)); vec3 L2 = normalize(vec3(-0.7, -0.3, 0.4));
           float dif = max(dot(N, L1), 0.0)*0.8 + max(dot(N, L2), 0.0)*0.25 + 0.22;
-          float spec = pow(max(dot(N, normalize(L1 + V)), 0.0), 40.0) * 0.3;
-          float fr = pow(1.0 - max(dot(N, V), 0.0), 2.5);
-          gl_FragColor = vec4(base*dif + vec3(spec) + uRim*fr*0.45, 1.0);
+          vec3 Hh = normalize(L1 + V);
+          float spec = pow(max(dot(N, Hh), 0.0), 90.0) * 0.75 + pow(max(dot(N, Hh), 0.0), 12.0) * 0.12;
+          float fr = pow(1.0 - max(dot(N, V), 0.0), 2.0);
+          // thin-film iridescence: hue rotates with view angle and surface relief
+          vec3 irid = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + fr * 1.3 + vD * 2.2 + uTime * 0.04));
+          // soft studio reflection (bright ceiling, dark floor)
+          vec3 Rf = reflect(-V, N);
+          float studio = smoothstep(-0.1, 0.9, Rf.y) * (0.35 + 0.65 * fr);
+          float tip = smoothstep(0.06, 0.45, vS);
+          vec3 col = base * dif + vec3(spec) + uRim * fr * 0.3 + irid * fr * 0.5 * uIri + vec3(0.92, 0.95, 1.0) * studio * 0.14;
+          col = 1.0 - exp(-col * 1.15);  // soft filmic roll-off keeps the body below the glow threshold
+          col = mix(col, uC4 * 1.18, tip * 0.8); // only spike tips push past 1.0, so the bloom picks out the tips
+          gl_FragColor = vec4(col, 1.0);
         }`;
       const mat = new THREE.ShaderMaterial({ uniforms, vertexShader, fragmentShader });
-      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 200, 200), mat);
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, LITE ? 128 : 200, LITE ? 128 : 200), mat);
       scene.add(mesh);
-      function size() { const sc = $('screen'), w = Math.max(1, sc.clientWidth), h = Math.max(1, sc.clientHeight); renderer.setSize(w, h, false); camera.aspect = w / h; camera.position.z = camera.aspect < 1 ? 6.8 / camera.aspect : 7; camera.updateProjectionMatrix(); }
+
+      // AURA: particles orbit on tilted rings, burst outward on kicks, flicker and stretch on highs
+      const PN = LITE ? 3500 : 7000, pPos = new Float32Array(PN * 3), pSeed = new Float32Array(PN * 4);
+      for (let i = 0; i < PN; i++) {
+        const z = Math.random() * 2 - 1, a = Math.random() * 6.2832, r = Math.sqrt(1 - z * z);
+        pPos.set([Math.cos(a) * r, z, Math.sin(a) * r], i * 3);
+        pSeed.set([1.3 + Math.pow(Math.random(), 1.8) * 1.6, (0.12 + Math.random() * 0.5) * (Math.random() < 0.5 ? -1 : 1), Math.random() * 6.2832, Math.random()], i * 4);
+      }
+      const pGeo = new THREE.BufferGeometry();
+      pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+      pGeo.setAttribute('aSeed', new THREE.BufferAttribute(pSeed, 4));
+      const pU = { uTime: uniforms.uTime, uBurst: { value: 0 }, uBass: uniforms.uBass, uHighP: { value: 0 }, uPx: { value: 1 }, uAura: { value: 1 }, uC2: uniforms.uC2, uC4: uniforms.uC4 };
+      const pMat = new THREE.ShaderMaterial({
+        uniforms: pU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+        vertexShader: `
+          attribute vec4 aSeed;
+          uniform float uTime, uBurst, uBass, uHighP, uPx, uAura;
+          varying float vA; varying float vM;
+          vec3 rot(vec3 v, vec3 k, float a){ return v*cos(a) + cross(k, v)*sin(a) + k*dot(k, v)*(1.0 - cos(a)); }
+          void main(){
+            vec3 axis = normalize(vec3(sin(aSeed.z * 1.7) * 0.6, 1.0, cos(aSeed.z * 0.9) * 0.6));
+            vec3 d = rot(position, axis, uTime * aSeed.y * 1.6 + aSeed.z);
+            float flick = 0.5 + 0.5 * sin(uTime * 9.0 + aSeed.z * 17.0);
+            float r = aSeed.x + uBurst * (0.5 + aSeed.w * 1.6) + uBass * 0.12 + uHighP * aSeed.w * flick * 0.7;
+            vec4 mv = modelViewMatrix * vec4(d * r, 1.0);
+            gl_PointSize = uPx * (1.8 + aSeed.w * 3.0 + uHighP * flick * 3.0) * (7.0 / -mv.z);
+            vA = clamp((0.3 + uHighP * aSeed.w * flick * 0.9 + uBurst * 0.55) * uAura, 0.0, 1.5) * smoothstep(4.8, 2.4, r + 0.6);
+            vM = aSeed.w;
+            gl_Position = projectionMatrix * mv;
+          }`,
+        fragmentShader: `
+          uniform vec3 uC2, uC4;
+          varying float vA; varying float vM;
+          void main(){
+            float d = length(gl_PointCoord - 0.5);
+            float a = smoothstep(0.5, 0.0, d);
+            vec3 c = mix(uC2, uC4, vM) * (0.8 + vM * 0.8);
+            gl_FragColor = vec4(c, a * a * vA);
+          }`
+      });
+      const aura = new THREE.Points(pGeo, pMat);
+      scene.add(aura);
+
+      // POST: bloom glow, then a finishing pass (chromatic edge, vignette, film grain)
+      let composer = null, bloom = null, finish = null;
+      if (THREE.EffectComposer && THREE.UnrealBloomPass && THREE.ShaderPass && THREE.RenderPass) {
+        try {
+          composer = new THREE.EffectComposer(renderer);
+          composer.addPass(new THREE.RenderPass(scene, camera));
+          bloom = new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), 0.7, 0.5, 0.82);
+          composer.addPass(bloom);
+          finish = new THREE.ShaderPass({
+            uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uAb: { value: 0 }, uGrain: { value: 0.035 }, uRes: { value: new THREE.Vector2(1, 1) } },
+            vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+            fragmentShader: `
+              uniform sampler2D tDiffuse; uniform float uTime, uAb, uGrain; uniform vec2 uRes; varying vec2 vUv;
+              void main(){
+                vec2 c = vUv - 0.5;
+                vec2 off = c * (0.0025 + dot(c, c) * 0.03) * uAb;
+                vec3 col = vec3(texture2D(tDiffuse, vUv - off).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv + off).b);
+                col *= mix(1.0, smoothstep(0.95, 0.25, length(c * vec2(1.0, 1.0))), 0.55);
+                float n = fract(sin(dot(floor(vUv * uRes) + fract(uTime * 7.13) * 91.7, vec2(12.9898, 78.233))) * 43758.5453);
+                col += (n - 0.5) * uGrain;
+                gl_FragColor = vec4(col, 1.0);
+              }`
+          });
+          composer.addPass(finish);
+        } catch (e) { console.error(e); composer = null; }
+      }
+      function size() { const sc = $('screen'), w = Math.max(1, sc.clientWidth), h = Math.max(1, sc.clientHeight); renderer.setSize(w, h, false); camera.aspect = w / h; camera.position.z = camera.aspect < 1 ? 7.2 / camera.aspect : 7.4; camera.updateProjectionMatrix(); const pr = renderer.getPixelRatio(); pU.uPx.value = pr * (h / 700); if (composer) { composer.setPixelRatio(pr); composer.setSize(w, h); finish.uniforms.uRes.value.set(w * pr, h * pr); } }
       size();
       // each spike listens to one treble frequency (1.8–14 kHz); shuffled so neighbours differ
       const order = dirs.map((_, i) => i); let seed = 7;
       for (let i = order.length - 1; i > 0; i--) { seed = (seed * 16807) % 2147483647; const j = seed % (i + 1); [order[i], order[j]] = [order[j], order[i]]; }
       const spikeHz = order.map(k => 1800 * Math.pow(14000 / 1800, k / (SPIKES - 1)));
-      return { renderer, scene, camera, mesh, uniforms, size, spikeHz, SPIKES };
+      return { renderer, scene, camera, mesh, uniforms, size, spikeHz, SPIKES, aura, pU, composer, bloom, finish };
     } catch (e) { console.error(e); return null; }
   }
   gl = initSphere();
@@ -520,6 +661,7 @@ input[type=url]::placeholder { color: var(--ink-dim); }
   const sm = { bass: 0, mid: 0, high: 0 };
   const pal = [[1,1,1],[1,1,1],[1,1,1],[1,1,1]];
   const spring = { s: 1, v: 0, prevBass: 0 };
+  let burst = 0;
   let sphereTime = 0;
   function oraclePalette() {
     const c = toneHSL(A.tone), p = A.presence;
@@ -548,6 +690,7 @@ input[type=url]::placeholder { color: var(--ink-dim); }
     const target = 1 + (live ? A.bass * 0.10 * bounce : 0);
     spring.v += (target - spring.s) * 0.28 + live * f * bounce * (onset * 0.9 + (A.beat > 0.99 ? 0.07 : 0));
     spring.v *= 0.68; spring.s += spring.v;
+    burst = Math.max(burst * Math.pow(0.9, dt / 16.7), live * f * Math.min(1, onset * 3 + (A.beat > 0.99 ? 0.8 : 0)) * bounce);
     const k = spring.s - 1;
     gl.mesh.scale.set(1 + k * 1.1, 1 + k * 0.8, 1 + k * 1.1); // a little squash on each hit
 
@@ -571,7 +714,17 @@ input[type=url]::placeholder { color: var(--ink-dim); }
 
     gl.mesh.rotation.y += dt * 0.00012 * (1 + A.level * 2) * f;
     gl.mesh.rotation.x = Math.sin(sphereTime * 0.15) * 0.25;
-    gl.renderer.render(gl.scene, gl.camera);
+    const glow = +$('kGlow').value, auraK = +$('kAura').value;
+    gl.pU.uBurst.value = burst; gl.pU.uHighP.value = sm.high * f * live * spikeK; gl.pU.uAura.value = auraK;
+    gl.aura.visible = auraK > 0.01;
+    gl.aura.rotation.y -= dt * 0.00005;
+    if (gl.composer) {
+      gl.bloom.strength = glow * (0.45 + sm.high * 0.25 * live + burst * 0.4);
+      gl.bloom.radius = 0.45 + sm.bass * 0.3 * live;
+      gl.finish.uniforms.uTime.value = performance.now() / 1000;
+      gl.finish.uniforms.uAb.value = reduced ? 0 : 1 + burst * 3 + sm.high * 1.5 * live;
+      gl.composer.render();
+    } else gl.renderer.render(gl.scene, gl.camera);
   }
 
   // ---------- 2D visuals ----------
@@ -657,7 +810,12 @@ input[type=url]::placeholder { color: var(--ink-dim); }
   }
   $('fmtL').onclick = () => setFormat(false);
   $('fmtP').onclick = () => setFormat(true);
-  try { if (localStorage.getItem('oracle-format') === 'p') setFormat(true); } catch {}
+  let savedFmt = null; try { savedFmt = localStorage.getItem('oracle-format'); } catch {}
+  if (savedFmt === 'p' || (!savedFmt && PHONE && innerHeight > innerWidth)) setFormat(true);
+
+  // Settings sheet (phones) and tap-the-screen to hide / show the controls
+  $('btnMore').onclick = () => { const open = !$('adv').classList.contains('open'); $('adv').classList.toggle('open', open); $('btnMore').setAttribute('aria-expanded', String(open)); $('btnMore').textContent = open ? 'Settings ▴' : 'Settings ▾'; };
+  $('screen').addEventListener('click', () => { if (PHONE && !document.querySelector('[data-tap-armed]')) $('controls').classList.toggle('hidden'); });
   addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
     if (e.key >= '1' && e.key <= '4') setMode(+e.key - 1);
@@ -665,6 +823,127 @@ input[type=url]::placeholder { color: var(--ink-dim); }
     else if (e.key === 'h' || e.key === 'H') $('controls').classList.toggle('hidden');
     else if (e.key === 'f' || e.key === 'F') { const d = document; const p = d.fullscreenElement ? d.exitFullscreen() : $('wrap').requestFullscreen?.(); p?.catch?.(() => {}); }
   });
+
+  // ---------- record a clip (canvas + audio → MP4/WebM) ----------
+  let rec = null, recDest = null;
+  const pad2 = n => String(n).padStart(2, '0');
+  function recLabel() { if (!rec) return; const s = Math.floor((performance.now() - rec.t0) / 1000); $('recLabel').textContent = 'Stop ' + pad2(Math.floor(s / 60)) + ':' + pad2(s % 60); }
+  function startRec() {
+    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) { msg('Recording needs a recent Chrome, Edge or Firefox.'); return; }
+    ensureAudio(); ac.resume();
+    const portrait = $('output').classList.contains('portrait');
+    const w = portrait ? 1080 : 1920, h = portrait ? 1920 : 1080;
+    const rc = document.createElement('canvas'); rc.width = w; rc.height = h;
+    const rx = rc.getContext('2d');
+    if (!recDest) { recDest = ac.createMediaStreamDestination(); analyser.connect(recDest); }
+    const vs = rc.captureStream(30);
+    const stream = new MediaStream([...vs.getVideoTracks(), ...recDest.stream.getAudioTracks()]);
+    const types = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+    const mime = types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+    let mr;
+    try { mr = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 14e6, audioBitsPerSecond: 192e3 } : {}); }
+    catch (e) { msg('This browser could not start recording.'); return; }
+    const chunks = [];
+    mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    mr.onstop = () => {
+      const type = mr.mimeType || mime || 'video/webm';
+      saveClip(new Blob(chunks, { type }), type.includes('mp4') ? 'mp4' : 'webm');
+      vs.getTracks().forEach(t => t.stop());
+    };
+    mr.start(500);
+    rec = { mr, rx, w, h, portrait, t0: performance.now() };
+    $('btnRec').setAttribute('aria-pressed', 'true'); recLabel();
+    msg('Recording ' + w + ' × ' + h + (mime.includes('mp4') ? ' MP4' : ' WebM') + ' with audio. Press Stop when done.');
+  }
+  function stopRec() {
+    if (!rec) return;
+    rec.mr.stop(); rec = null;
+    $('btnRec').setAttribute('aria-pressed', 'false'); $('recLabel').textContent = 'Rec clip';
+    msg('Preparing clip…');
+  }
+  async function saveClip(blob, ext) {
+    const d = new Date();
+    const name = `the-oracle-${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}.${ext}`;
+    let dl = null;
+    try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch { dl = null; }
+    if (dl) {
+      try { await dl.save({ filename: name, data: blob }); msg('Clip saved: ' + name); }
+      catch (e) { msg(e && e.code === 'declined' ? 'Save cancelled.' : 'The clip could not be saved here. Use the HTML file or your own site to record.'); }
+      return;
+    }
+    const file = new File([blob], name, { type: blob.type });
+    if (navigator.canShare && LITE) {
+      let ok = false; try { ok = navigator.canShare({ files: [file] }); } catch {}
+      if (ok) {
+        // the share sheet needs a fresh tap, so offer a button
+        const m = $('msg'); m.textContent = 'Clip ready. ';
+        const b = document.createElement('button'); b.type = 'button'; b.textContent = 'Save / share clip';
+        b.onclick = () => navigator.share({ files: [file], title: 'The Oracle' }).then(() => msg('Clip shared.')).catch(e => { if (e && e.name !== 'AbortError') msg('Could not open the share sheet.'); });
+        m.appendChild(b);
+        return;
+      }
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    msg('Clip saved: ' + name + (ext === 'webm' ? ' (WebM; convert to MP4 for Instagram if needed)' : ''));
+  }
+  $('btnRec').onclick = () => rec ? stopRec() : startRec();
+
+  // draw the current output into the recording canvas, optionally with title + HUD
+  function rr(x, y, w, h, r) { const c = rec.rx; c.beginPath(); if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h); }
+  function drawRecFrame() {
+    const { rx, w, h, portrait } = rec;
+    const src = mode === 0 ? $('gl') : cv;
+    rx.fillStyle = '#0b0c10'; rx.fillRect(0, 0, w, h);
+    const s = Math.max(w / src.width, h / src.height), dw = src.width * s, dh = src.height * s;
+    rx.drawImage(src, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    if (!$('recHud').checked) return;
+    const u = portrait ? w * 0.026 : w * 0.01;
+    const mono = px => `500 ${px}px "IBM Plex Mono", ui-monospace, monospace`;
+    rx.textBaseline = 'alphabetic';
+    rx.fillStyle = '#ece7dc'; rx.font = `600 ${1.6 * u}px "IBM Plex Sans", system-ui, sans-serif`;
+    rx.fillText('The Oracle', 2.4 * u, h * 0.032 + 1.6 * u);
+    rx.fillStyle = '#9a968c'; rx.font = mono(0.85 * u);
+    rx.fillText($('srcLabel').textContent.toUpperCase(), 2.4 * u, h * 0.032 + 3.1 * u);
+    // HUD cells
+    const cells = [
+      ['BASS', A.bass, '#8f7cff'], ['MID', A.mid, '#e6a1c8'], ['HIGH', A.high, '#f7f0b0'], ['TONE ' + $('vTone').textContent, A.tone, 'tone'], ['BEAT', A.beat, 'beat']
+    ];
+    const ch = 4.2 * u, pad = 1.4 * u;
+    let rows = portrait ? [[0, 1, 2], [3, 4]] : [[0, 1, 2, 3, 4]];
+    const widths = i => (i === 3 ? (portrait ? 2 : 1.55) : 1) * (portrait ? 0.86 * w / 3 : 9.4 * u);
+    const totalW = Math.max(...rows.map(r => r.reduce((a, i) => a + widths(i), 0)));
+    const x0 = (w - totalW) / 2, y0 = h - h * 0.04 - ch * rows.length;
+    rx.fillStyle = 'rgba(11,12,16,0.6)'; rr(x0, y0, totalW, ch * rows.length, 0.6 * u); rx.fill();
+    rx.strokeStyle = 'rgba(220,214,200,0.14)'; rx.lineWidth = Math.max(1, u * 0.08); rx.stroke();
+    rows.forEach((row, ri) => {
+      let x = x0; const y = y0 + ri * ch;
+      row.forEach((i, k) => {
+        const [label, v, color] = cells[i], cw = widths(i);
+        if (k) { rx.beginPath(); rx.moveTo(x, y); rx.lineTo(x, y + ch); rx.stroke(); }
+        if (ri) { rx.beginPath(); rx.moveTo(x, y); rx.lineTo(x + cw, y); rx.stroke(); }
+        rx.font = mono(0.85 * u); rx.fillStyle = '#9a968c'; rx.fillText(label, x + pad, y + 1.2 * u + 0.85 * u);
+        const by = y + ch - 1.3 * u, bw = cw - pad * 2, bh = Math.max(3, 0.32 * u);
+        if (color === 'tone') {
+          const g = rx.createLinearGradient(x + pad, 0, x + pad + bw, 0);
+          ['hsl(250,60%,18%)', 'hsl(300,70%,40%)', 'hsl(335,85%,62%)', 'hsl(30,95%,72%)', 'hsl(60,100%,82%)'].forEach((c, j) => g.addColorStop(j / 4, c));
+          rx.fillStyle = g; rx.fillRect(x + pad, by, bw, bh);
+          rx.fillStyle = '#ece7dc'; rx.fillRect(x + pad + bw * v - 1, by - 0.35 * u, 2, bh + 0.7 * u);
+        } else if (color === 'beat') {
+          rx.fillStyle = v > 0.5 ? '#f2b45a' : 'rgba(220,214,200,0.14)';
+          rx.beginPath(); rx.arc(x + pad + 0.3 * u, by + bh / 2, 0.3 * u, 0, 6.2832); rx.fill();
+          rx.fillStyle = '#ece7dc'; rx.textAlign = 'right'; rx.fillText(A.bpm ? A.bpm + ' bpm' : '— bpm', x + cw - pad, y + 2.05 * u); rx.textAlign = 'left';
+        } else {
+          rx.fillStyle = 'rgba(220,214,200,0.14)'; rx.fillRect(x + pad, by, bw, bh);
+          rx.fillStyle = color; rx.fillRect(x + pad, by, bw * clamp(v), bh);
+          rx.fillStyle = '#ece7dc'; rx.textAlign = 'right'; rx.fillText(v.toFixed(2), x + cw - pad, y + 2.05 * u); rx.textAlign = 'left';
+        }
+        x += cw;
+      });
+    });
+  }
 
   // ---------- loop ----------
   let prev = performance.now(), frame = 0;
@@ -678,6 +957,7 @@ input[type=url]::placeholder { color: var(--ink-dim); }
       cx.fillRect(0, 0, W, H);
       if (mode === 1) drawDots(dt); else if (mode === 2) drawWaves(t); else drawField(t);
     }
+    if (rec) { drawRecFrame(); if ((frame & 15) === 0) recLabel(); }
     if ((frame++ & 3) === 0) {
       [['Bass', A.bass], ['Mid', A.mid], ['High', A.high]].forEach(([k, v]) => { $('m' + k).style.width = (v * 100).toFixed(0) + '%'; $('v' + k).textContent = v.toFixed(2); });
       $('toneMark').style.left = (A.tone * 100).toFixed(1) + '%';
